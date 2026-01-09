@@ -46,8 +46,8 @@ class WeatherAgent:
         # 定义工具列表
         self.tools = [get_weather]
 
-        # 创建 Agent (使用新的 create_agent API)
-        self.graph = create_agent(
+        # 创建 Agent
+        self.agent = create_agent(
             model=self.llm,
             tools=self.tools,
             system_prompt="你是一个专业的天气助手，可以帮助用户查询中国任何城市的天气信息。"
@@ -67,7 +67,6 @@ class WeatherAgent:
             Agent 的回复
         """
         try:
-            # 使用新的 graph.invoke API
             inputs = {
                 "messages": [
                     {"role": "user", "content": message}
@@ -75,7 +74,7 @@ class WeatherAgent:
             }
 
             # 调用 agent
-            response = await self.graph.ainvoke(inputs)
+            response = await self.agent.ainvoke(inputs)
 
             # 提取最后一条 AI 消息作为回复
             messages = response.get("messages", [])
