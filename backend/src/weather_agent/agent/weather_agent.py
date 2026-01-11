@@ -7,6 +7,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from weather_agent.core.config import settings
 from weather_agent.services.qweather_service import QWeatherService
+from typing import AsyncIterator
 
 
 # 创建天气查询工具
@@ -56,43 +57,54 @@ class WeatherAgent:
             debug=False,
         )
 
-    async def chat(self, message: str) -> str:
+    def _create_inputs(self, message: str) -> dict:
         """
-        与 Agent 进行对话
+        创建 Agent 输入格式
 
         Args:
             message: 用户消息
 
         Returns:
-            Agent 的回复
+            Agent 输入字典
         """
-        try:
-            inputs = {
-                "messages": [
-                    {"role": "user", "content": message}
-                ]
-            }
+        return {
+            "messages": [
+                {"role": "user", "content": message}
+            ]
+        }
 
-            # 调用 agent
-            response = await self.agent.ainvoke(inputs)
-
-            # 提取最后一条 AI 消息作为回复
-            messages = response.get("messages", [])
-            for msg in reversed(messages):
-                if isinstance(msg, dict):
-                    if msg.get("role") == "assistant":
-                        return msg.get("content", "")
-                elif hasattr(msg, "content"):
-                    return str(msg.content)
-
-            return "抱歉，未能生成回复。"
-
-        except Exception as e:
-            return f"抱歉，处理请求时出现错误：{str(e)}"
-
-    async def astream_chat(self, message: str):
+    async def _extract_content_chunks(self, chunk) -> list[str]:
         """
-        与 Agent 进行流式对话
+        从流式 chunk 中提取内容片段
+
+        Args:
+            chunk: astream 返回的 chunk
+
+        Returns:
+            内容片段列表
+        """
+        chunks = []
+
+        # chunk 格式: {'agent': {'messages': [AIMessage(content='...')]}}
+        if isinstance(chunk, dict):
+            for value in chunk.values():
+                if isinstance(value, dict) and "messages" in value:
+                    messages = value["messages"]
+                    for msg in messages:
+                        if hasattr(msg, "content") and msg.content:
+                            content = str(msg.content)
+                            if content:
+                                chunks.append(content)
+                elif isinstance(value, str) and value:
+                    chunks.append(value)
+        elif isinstance(chunk, str) and chunk:
+            chunks.append(chunk)
+
+        return chunks
+
+    async def astream_chat(self, message: str) -> AsyncIterator[str]:
+        """
+        与 Agent 进行流式对话（核心方法）
 
         Args:
             message: 用户消息
@@ -101,26 +113,34 @@ class WeatherAgent:
             str: Agent 的回复片段
         """
         try:
-            inputs = {
-                "messages": [
-                    {"role": "user", "content": message}
-                ]
-            }
+            inputs = self._create_inputs(message)
 
             # 使用 astream 进行流式输出
             async for chunk in self.agent.astream(inputs, stream_mode="updates"):
-                # chunk 格式: {'agent': {'messages': [AIMessage(content='...')]}}
-                if isinstance(chunk, dict):
-                    for value in chunk.values():
-                        if isinstance(value, dict) and "messages" in value:
-                            messages = value["messages"]
-                            for msg in messages:
-                                if hasattr(msg, "content") and msg.content:
-                                    yield str(msg.content)
-                        elif isinstance(value, str) and value:
-                            yield value
-                elif isinstance(chunk, str) and chunk:
-                    yield chunk
+                chunks = self._extract_content_chunks(chunk)
+                for content in chunks:
+                    yield content
 
         except Exception as e:
             yield f"\n\n[错误] 处理请求时出现错误：{str(e)}"
+
+    async def chat(self, message: str) -> str:
+        """
+        与 Agent 进行对话（非流式，内部使用流式逻辑）
+
+        Args:
+            message: 用户消息
+
+        Returns:
+            Agent 的完整回复
+        """
+        try:
+            # 收集所有流式片段
+            full_response = ""
+            async for chunk in self.astream_chat(message):
+                full_response += chunk
+
+            return full_response if full_response else "抱歉，未能生成回复。"
+
+        except Exception as e:
+            return f"抱歉，处理请求时出现错误：{str(e)}"
