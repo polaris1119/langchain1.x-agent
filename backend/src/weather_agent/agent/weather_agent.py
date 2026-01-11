@@ -89,3 +89,38 @@ class WeatherAgent:
 
         except Exception as e:
             return f"抱歉，处理请求时出现错误：{str(e)}"
+
+    async def astream_chat(self, message: str):
+        """
+        与 Agent 进行流式对话
+
+        Args:
+            message: 用户消息
+
+        Yields:
+            str: Agent 的回复片段
+        """
+        try:
+            inputs = {
+                "messages": [
+                    {"role": "user", "content": message}
+                ]
+            }
+
+            # 使用 astream 进行流式输出
+            async for chunk in self.agent.astream(inputs, stream_mode="updates"):
+                # chunk 格式: {'agent': {'messages': [AIMessage(content='...')]}}
+                if isinstance(chunk, dict):
+                    for value in chunk.values():
+                        if isinstance(value, dict) and "messages" in value:
+                            messages = value["messages"]
+                            for msg in messages:
+                                if hasattr(msg, "content") and msg.content:
+                                    yield str(msg.content)
+                        elif isinstance(value, str) and value:
+                            yield value
+                elif isinstance(chunk, str) and chunk:
+                    yield chunk
+
+        except Exception as e:
+            yield f"\n\n[错误] 处理请求时出现错误：{str(e)}"
