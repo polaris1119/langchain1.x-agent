@@ -4,7 +4,8 @@ LangChain 天气查询 Agent
 """
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
-from langchain_core.tools import tool
+from langchain.tools import tool
+from langchain.messages import AIMessage, HumanMessage
 from weather_agent.core.config import settings
 from weather_agent.services.qweather_service import QWeatherService
 from typing import AsyncIterator
@@ -59,7 +60,7 @@ class WeatherAgent:
 
     def _create_inputs(self, message: str) -> dict:
         """
-        创建 Agent 输入格式
+        创建 Agent 输入格式（使用 LangChain 1.x Message 类型）
 
         Args:
             message: 用户消息
@@ -68,43 +69,37 @@ class WeatherAgent:
             Agent 输入字典
         """
         return {
-            "messages": [
-                {"role": "user", "content": message}
-            ]
+            "messages": [HumanMessage(content=message)]
         }
 
-    async def _extract_content_chunks(self, chunk) -> list[str]:
+    def _extract_content_from_message(self, message) -> str | None:
         """
-        从流式 chunk 中提取内容片段
+        从 Message 对象中提取内容（符合 LangChain 1.x 最佳实践）
 
         Args:
-            chunk: astream 返回的 chunk
+            message: LangChain Message 对象（AIMessage、HumanMessage 等）
 
         Returns:
-            内容片段列表
+            提取的内容字符串，如果无法提取则返回 None
         """
-        chunks = []
-
-        # chunk 格式: {'agent': {'messages': [AIMessage(content='...')]}}
-        if isinstance(chunk, dict):
-            for value in chunk.values():
-                if isinstance(value, dict) and "messages" in value:
-                    messages = value["messages"]
-                    for msg in messages:
-                        if hasattr(msg, "content") and msg.content:
-                            content = str(msg.content)
-                            if content:
-                                chunks.append(content)
-                elif isinstance(value, str) and value:
-                    chunks.append(value)
-        elif isinstance(chunk, str) and chunk:
-            chunks.append(chunk)
-
-        return chunks
+        # 优先使用 content 属性（LangChain 1.x 标准）
+        if hasattr(message, "content"):
+            content = message.content
+            # 处理不同类型的 content
+            if isinstance(content, str):
+                return content
+            elif isinstance(content, list) and content:
+                # 处理 content_blocks 格式
+                if hasattr(content[0], "text"):
+                    return "".join(block.text for block in content if hasattr(block, "text"))
+                # 处理字符串列表
+                elif all(isinstance(item, str) for item in content):
+                    return "".join(content)
+        return None
 
     async def astream_chat(self, message: str) -> AsyncIterator[str]:
         """
-        与 Agent 进行流式对话（核心方法）
+        与 Agent 进行流式对话（核心方法，符合 LangChain 1.x 最佳实践）
 
         Args:
             message: 用户消息
@@ -115,11 +110,18 @@ class WeatherAgent:
         try:
             inputs = self._create_inputs(message)
 
-            # 使用 astream 进行流式输出
+            # 使用 astream 的 updates 模式获取状态更新
             async for chunk in self.agent.astream(inputs, stream_mode="updates"):
-                chunks = self._extract_content_chunks(chunk)
-                for content in chunks:
-                    yield content
+                # chunk 格式: {node_name: {"messages": [Message]}}
+                for node_data in chunk.values():
+                    if isinstance(node_data, dict) and "messages" in node_data:
+                        messages = node_data["messages"]
+                        for msg in messages:
+                            # 仅输出 AI 的回复消息
+                            if isinstance(msg, AIMessage):
+                                content = self._extract_content_from_message(msg)
+                                if content:
+                                    yield content
 
         except Exception as e:
             yield f"\n\n[错误] 处理请求时出现错误：{str(e)}"
