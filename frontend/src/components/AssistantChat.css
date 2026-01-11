@@ -1,0 +1,165 @@
+/**
+ * Assistant UI 聊天组件样式
+ */
+
+.assistant-chat-container {
+  height: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Thread Root */
+.aui-thread-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Thread Viewport */
+.aui-thread-viewport {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+/* 欢迎消息 */
+.aui-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+}
+
+.aui-welcome-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.aui-welcome-subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+/* 消息 */
+.aui-message {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.aui-user-message {
+  justify-content: flex-end;
+}
+
+.aui-assistant-message {
+  justify-content: flex-start;
+}
+
+.aui-message-content {
+  max-width: 80%;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  word-wrap: break-word;
+}
+
+.aui-user-message .aui-message-content {
+  background-color: #3b82f6;
+  color: white;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.aui-assistant-message .aui-message-content {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border-bottom-left-radius: 0.25rem;
+}
+
+/* Composer Wrapper */
+.aui-composer-wrapper {
+  border-top: 1px solid #e5e7eb;
+  padding: 1rem;
+  background: white;
+}
+
+/* Composer */
+.aui-composer {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.aui-composer-input {
+  flex: 1;
+  min-height: 44px;
+  max-height: 200px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.aui-composer-input:focus {
+  border-color: #3b82f6;
+}
+
+.aui-composer-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Send Button */
+.aui-send-button {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.aui-send-button:hover {
+  background-color: #2563eb;
+}
+
+.aui-send-button:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* 自定义滚动条 */
+.aui-thread-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.aui-thread-viewport::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.aui-thread-viewport::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.aui-thread-viewport::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

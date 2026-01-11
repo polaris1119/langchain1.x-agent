@@ -1,7 +1,7 @@
 /**
  * 天气页面
  */
-import WeatherChat from '@/components/WeatherChat'
+import AssistantChat from '@/components/AssistantChat'
 
 export default function WeatherPage() {
   return (
@@ -12,20 +12,20 @@ export default function WeatherPage() {
             🌤️ 天气查询助手
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            基于 LangChain 的智能天气查询 Agent
+            基于 LangChain 和 Assistant UI 的智能天气查询 Agent
           </p>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <WeatherChat />
+          <AssistantChat />
         </div>
       </main>
 
       <footer className="border-t bg-white/50 backdrop-blur-sm mt-8">
         <div className="container mx-auto px-4 py-4 text-center text-sm text-gray-500">
-          Powered by LangChain + OpenRouter + 和风天气
+          Powered by LangChain + Assistant UI + OpenRouter + 和风天气
         </div>
       </footer>
     </div>
