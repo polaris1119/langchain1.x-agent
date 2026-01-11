@@ -27,14 +27,8 @@ export function WeatherRuntimeProvider({
 }: Readonly<{
   children: ReactNode
 }>) {
-  // 初始欢迎消息
-  const [messages, setMessages] = useState<MyMessage[]>([
-    {
-      role: 'assistant',
-      content:
-        '你好！我是天气查询助手，可以帮你查询任何城市的天气情况。请问想了解哪个城市的天气？',
-    },
-  ])
+  // 初始欢迎消息 - 留空显示欢迎屏幕
+  const [messages, setMessages] = useState<MyMessage[]>([])
   const [isRunning, setIsRunning] = useState(false)
 
   const onNew = async (message: {
